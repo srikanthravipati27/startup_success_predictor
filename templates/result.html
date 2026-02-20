@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Prediction Result | Prosperity Prognosticator</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0a0f1e;
+      --card:     #111827;
+      --accent:   #6366f1;
+      --accent2:  #22d3ee;
+      --success:  #10b981;
+      --danger:   #ef4444;
+      --text:     #f1f5f9;
+      --muted:    #94a3b8;
+      --border:   rgba(255,255,255,0.08);
+      --radius:   16px;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1.2rem 4rem;
+      border-bottom: 1px solid var(--border);
+      background: rgba(10,15,30,0.9);
+      backdrop-filter: blur(12px);
+    }
+    .logo { font-size: 1.35rem; font-weight: 800; }
+    .logo span { color: var(--accent); }
+    nav a { color: var(--muted); text-decoration: none; font-weight: 500; }
+    nav a:hover { color: var(--text); }
+
+    main {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4rem 2rem;
+    }
+
+    .result-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 3.5rem;
+      max-width: 680px;
+      width: 100%;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Glow effect based on result */
+    .result-card.acquired::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse 80% 40% at 50% 0%, rgba(16,185,129,.2) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .result-card.closed::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse 80% 40% at 50% 0%, rgba(239,68,68,.18) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .result-icon { font-size: 4.5rem; margin-bottom: 1rem; }
+
+    .result-label {
+      font-size: 2.6rem;
+      font-weight: 900;
+      margin-bottom: .5rem;
+    }
+    .result-label.success { color: var(--success); }
+    .result-label.danger  { color: var(--danger); }
+    .result-label.neutral { color: var(--muted); }
+
+    .result-subtitle {
+      color: var(--muted);
+      font-size: 1rem;
+      margin-bottom: 2.5rem;
+    }
+
+    /* Confidence gauge */
+    .confidence-wrap {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem 2rem;
+      margin-bottom: 2rem;
+    }
+    .confidence-wrap .label {
+      font-size: .8rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: .75rem;
+    }
+    .conf-value {
+      font-size: 3rem;
+      font-weight: 900;
+      color: var(--accent2);
+      margin-bottom: 1rem;
+    }
+    .progress-bar {
+      width: 100%;
+      height: 10px;
+      background: rgba(255,255,255,0.07);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      transition: width 1s ease;
+    }
+
+    /* Probability breakdown */
+    .breakdown {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 2.5rem;
+    }
+    .prob-item {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.2rem;
+    }
+    .prob-item .p-label { font-size: .8rem; color: var(--muted); margin-bottom: .35rem; font-weight: 600; }
+    .prob-item .p-value { font-size: 1.7rem; font-weight: 900; }
+    .prob-item.acquired .p-value { color: var(--success); }
+    .prob-item.closed   .p-value { color: var(--danger); }
+
+    /* Error box */
+    .error-box {
+      background: rgba(239,68,68,.1);
+      border: 1px solid rgba(239,68,68,.3);
+      border-radius: var(--radius);
+      padding: 1.2rem;
+      color: #fca5a5;
+      font-size: .9rem;
+      margin-bottom: 1.5rem;
+      text-align: left;
+    }
+
+    /* Actions */
+    .actions { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+    .btn {
+      display: inline-flex; align-items: center; gap: .5rem;
+      padding: .85rem 2rem;
+      border-radius: 10px;
+      font-size: .95rem;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+      transition: all .2s;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), #818cf8);
+      color: #fff;
+      box-shadow: 0 4px 20px rgba(99,102,241,.4);
+    }
+    .btn-primary:hover { transform: translateY(-2px); }
+    .btn-outline {
+      background: transparent;
+      border: 1.5px solid var(--border);
+      color: var(--text);
+    }
+    .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+
+    @media (max-width: 768px) {
+      nav { padding: 1rem 1.5rem; }
+      .result-card { padding: 2.5rem 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">Prosperity<span>AI</span></div>
+  <a href="/">← Home</a>
+</nav>
+
+<main>
+  {% if result == 'Error' %}
+  <div class="result-card">
+    <div class="result-icon">⚠️</div>
+    <div class="result-label neutral">Prediction Error</div>
+    <p class="result-subtitle">Something went wrong while processing your input.</p>
+    {% if error_message %}
+    <div class="error-box">
+      <strong>Error detail:</strong><br>{{ error_message }}
+    </div>
+    {% endif %}
+    <div class="actions">
+      <a href="/predict_page" class="btn btn-primary">← Try Again</a>
+      <a href="/" class="btn btn-outline">Home</a>
+    </div>
+  </div>
+
+  {% elif 'Acquired' in result %}
+  <div class="result-card acquired">
+    <div class="result-icon">🚀</div>
+    <div class="result-label success">Acquired</div>
+    <p class="result-subtitle">Our model predicts this startup has strong acquisition potential.</p>
+
+    <div class="confidence-wrap">
+      <div class="label">Model Confidence</div>
+      <div class="conf-value">{{ confidence }}%</div>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width: {{ confidence }}%;"></div>
+      </div>
+    </div>
+
+    <div class="breakdown">
+      <div class="prob-item acquired">
+        <div class="p-label">🟢 Acquired Probability</div>
+        <div class="p-value">{{ acquired_prob }}%</div>
+      </div>
+      <div class="prob-item closed">
+        <div class="p-label">🔴 Closed Probability</div>
+        <div class="p-value">{{ closed_prob }}%</div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <a href="/predict_page" class="btn btn-primary">🔁 Predict Another</a>
+      <a href="/" class="btn btn-outline">Home</a>
+    </div>
+  </div>
+
+  {% else %}
+  <div class="result-card closed">
+    <div class="result-icon">📉</div>
+    <div class="result-label danger">Closed</div>
+    <p class="result-subtitle">Our model predicts this startup may face significant challenges ahead.</p>
+
+    <div class="confidence-wrap">
+      <div class="label">Model Confidence</div>
+      <div class="conf-value">{{ confidence }}%</div>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width: {{ confidence }}%;"></div>
+      </div>
+    </div>
+
+    <div class="breakdown">
+      <div class="prob-item acquired">
+        <div class="p-label">🟢 Acquired Probability</div>
+        <div class="p-value">{{ acquired_prob }}%</div>
+      </div>
+      <div class="prob-item closed">
+        <div class="p-label">🔴 Closed Probability</div>
+        <div class="p-value">{{ closed_prob }}%</div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <a href="/predict_page" class="btn btn-primary">🔁 Predict Another</a>
+      <a href="/" class="btn btn-outline">Home</a>
+    </div>
+  </div>
+  {% endif %}
+</main>
+
+</body>
+</html>
